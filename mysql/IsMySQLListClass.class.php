@@ -153,6 +153,23 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	protected $limit = 0;
 
 	/**
+	 *
+	 * @var ReflectionClass
+	 */
+	private $reflectionClass = null;
+
+	/**
+	 * @return ReflectionClass
+	 */
+	private function reflectionClass()
+	{
+		if (is_null($this->reflectionClass)) {
+			$this->reflectionClass = new ReflectionClass($this->className);
+		}
+		return $this->reflectionClass;
+	}
+
+	/**
 	 * Konstruktor
 	 *
 	 * @param array $tablelist
@@ -160,7 +177,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 */
 	function __construct($tablelist,$className='IsMySQLClass')
 	{
-		$this->tablelist = $this->defaultTableList = $tablelist;
+		$this->tablelist = $this->defaultTablelist = $tablelist;
 		$this->className = $className;
 		//lekérdezi a lehetséges mezőneveket.
 		$this->getFields();
@@ -200,8 +217,8 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * Aktuális oldalszám szerint lista inicializálása
 	 *
 	 * @see $pagevar
-	 * @param $sql FROM utáni sql kód
-	 * @param $limit Hány rekord legyen egy oldalon
+	 * @param string $sql FROM utáni sql kód
+	 * @param int $limit Hány rekord legyen egy oldalon
 	 * @param int $page Oldalszém. Elhagyása esetén az url-ből veszi az oldalszámot.
 	 */
 	public function page($sql, $limit, $page=null)
@@ -227,9 +244,9 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * Lista inicializálása
 	 *
 	 *
-	 * @param $psql FROM utáni sql kód (limit nélkül)
-	 * @param $offset Ennyi rekordot ugrik át a listában
-	 * @param $limit Ennyi rekordot kérdez le az offset értéktől kezdve
+	 * @param string $psql FROM utáni sql kód (limit nélkül)
+	 * @param int $offset Ennyi rekordot ugrik át a listában
+	 * @param int $limit Ennyi rekordot kérdez le az offset értéktől kezdve
 	 */
 	public function init($psql,&$offset=0,$limit=0)
 	{
@@ -244,12 +261,10 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 				$afields[] = "`$tableName`.`$field` as `$tableName.$field`";
 			}
 			//ha az elsődleges kulcs mezőt nem kértük le, akkor automatikusan lekérdezéshez adódik
-			if (!isset($fieldList[key($this->priKeys[$tableName])]))
-			{
-				$afields[] = "`$tableName`.`".
-					key($this->priKeys[$tableName]).
-					"` as `$tableName.".key($this->priKeys[$tableName])."`";
-
+			foreach($this->priKeys[$tableName] as $pkn => $pkv) {
+				if (!isset($fieldList[$pkn])) {
+					$afields[] = "`$tableName`.`$pkn` as `$tableName.$pkn`";
+				}
 			}
 		}
 
@@ -286,12 +301,11 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 		//Az ADBClass absztrakt osztály tulajdonságainak lekérdezése
 		$ref = new ReflectionClass('ADBClass');
 		$props = $ref->getDefaultProperties();
-		//A listában tárolandó objektumtípus lekérdezése a későbbi példányosítás miatt.
-		$IIsDBClass = new ReflectionClass($this->className);
+		
 		while($fetch = mysql_fetch_assoc($query)) {
 			//objektumok létrehozása
 			//Egy példány létrehozása a listában tárolandó objektumtípusból
-			$record = $IIsDBClass->newInstance($this->defaultTablelist,true);
+			$record = $this->createRecord(true);
 
 			$afields = array();
 			//itt az eredményt be kell tölteni a properties tulajdonságba
@@ -302,15 +316,15 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 					$this->properties[$tableName][$field] = $fetch[$tableName.'.'.$field];
 				}
 				//az elsődleges kulcsok értékeit külön is tárolni kell egy tömbben
-				$this->priKeys[$tableName][key($this->priKeys[$tableName])] =
-					$fetch[$tableName.'.'.key($this->priKeys[$tableName])];
+				foreach ($this->priKeys[$tableName] as $pkn => $pkv) {
+					$this->priKeys[$tableName][$pkn] = $fetch[$tableName.'.'.$pkn];
+				}
 			}
 
 			//Az összes olyan tulajdonság beállítása az új objektumnak, ami a lista objektummal közös
 			foreach ($props as $prop=>$value) {
 				$record->$prop = $this->$prop;
 			}
-			$record->isSqlQuery = true;
 			//Új elem felvétele a listába
 			$this->records[] = $record;
 		}
@@ -335,13 +349,9 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 *	'table1'=>array('field1','field2'),
 	 *	'table2'=>array('field3','field4'));
 	 * $object = new MyClass($tablelist);
-	 * $object->keyName = 'id';
 	 * $list = new MyList($tablelist,'MyClass');
 	 * $object->field1 = 'value1';
 	 * $object->field3 = 'value3';
-	 * // A tulajdonságokat lekérdezhetővé teszi,de nem frissíti az adatbázist,
-	 * // mivel nincs is mit
-	 * $object->update(false);
 	 * $list->add($object);
 	 * </code>
 	 *
@@ -352,6 +362,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 */
 	function add(IIsDBClass $object, $append=false)
 	{
+		$object->update(false);
 		//ciklusban végigmegy a táblákon
 		$props = $object->properties;
 		$first = true;
@@ -361,10 +372,6 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 			//újabb ciklusban a mezőkön
 			$fieldNames = array();
 			$fieldValues = array();
-			if (!$first)
-			{
-				$fields[$object->keyName] = $object->keyValue;
-			}
 			foreach ($fields as $fieldName => $fieldValue)
 			{
 				//a mezőneveket és az értékeiket külön tömbbe tölti.
@@ -382,9 +389,6 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 				$first = false;
 				//szükség lehet az elsődleges kulcsra, ha a kapcsoló mező auto_increment
 				$last_id = mysql_insert_id();
-				//visszaadja a kapott objektumnak a kapcsoló mező értékét, hogy felhasználható legyen az init() metódusban
-				$object->keyValue = ( $object->keyName == key($object->priKeys[$tableName])) ? $last_id :
-						$fields[$object->keyName];
 			}
 		}
 		$this->count++;
@@ -459,17 +463,12 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 					$this->tablelist[$tableName][] = $field['Field'];
 
 				}
-				//Ha ez az elsődleges kulcs mező, akkor visszaadja a primary_key
-				//tulajdonságnak, hogy a kapcsoló mező elsődleges kulcs
-				if ($this->keyName == $field['Field'])
-				{
-					$this->primary_key = $field['Field'];
-				}
+
 				//minden elsődleges kulcs mező értékét külön is tároljuk,
 				//ezért előtte biztositjuk a helyet neki üres értékkel
 				if ($field['Key'] == 'PRI')
 				{
-					$this->priKeys[$tableName] = array($field['Field']=>'');
+					$this->priKeys[$tableName][$field['Field']] = '';
 				}
 
 			}// var_dump($this->tablelist);
@@ -514,38 +513,59 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * </code>
 	 *
 	 * @see IIsDBListClass::delete()
+	 * @param mixed $keyName Mező neve, ami alapján törölni kell. Vagy
+	 *		asszociatív tömb. Kulcs a keyName, érték a keyValue (több is adható)
+	 * @param string $keyValue Mező értéke, ami alapján törölni kell. 
 	 * @return mixed true, ha sikeres a törlés, egyébként a MySQL hibaüzenet
 	 */
-	public function delete($keyName,$keyValue)
+	public function delete($keyName,$keyValue=null)
 	{
 		$table = "";
 		$field = "";
 		$i=0;
-		$keyValue = mysql_real_escape_string($keyValue);
-		$keyName = mysql_real_escape_string($keyName);
-		//Ha a mezőnevet nem a táblanévvel együtt adtuk meg
-		if (!$this->sep_table_field($keyName,$table,$field)) {
-			//minden nem védett táblából a megfelelő rekordok törlése
-			foreach ($this->tablelist as $t => &$f)
+		
+		if (!is_array($keyName)) {
+			$keyName = array($keyName => $keyValue);
+		}
+
+		$keys = array(
+			'wt' /* with table */ => array(),
+			'wot' /* without table */ => array()
+		);
+		foreach ($keyName as $kn => $kv) {
+			if ($this->sep_table_field($kn,$table,$field)) {
+				$keys['wt'][$table][$field] = $kv;
+			} else {
+				$keys['wot'][$kn] = $kv;
+			}
+		}
+		
+		foreach ($keys['wot'] as $wot_field => $wot_value)
+		{
+			foreach ($this->properties as $t => &$f)
 			{
 				if (isset($this->protectedTables[$t])) continue;
-				$table = (isset($this->tableAliases[$t])) ? $this->tableAliases[$t] : $t;
-				mysql_query("delete from `".$table."` where `$keyName` = '$keyValue'");
-				$i+=mysql_affected_rows();
 
+				if (isset($f[$wot_field])) {
+					$keys['wt'][$t][$wot_field] = $wot_value;
+				}
 			}
-			$this->setPagesAndCount($this->sql, $this->limit);
-			return $i;
 		}
-		if (isset($this->protectedTables[$table])) return 0;
-		if(isset($this->tableAliases[$table]))
+
+		foreach($keys['wt'] as $wt_table => $wt_fields )
 		{
-			$table = $this->tableAliases[$table];
+			if (isset($this->protectedTables[$wt_table])) continue;
+			if(isset($this->tableAliases[$wt_table]))
+			{
+				$wt_table = $this->tableAliases[$wt_table];
+			}
+			$sql = "delete from `$wt_table` where ".REDBObjects::createWhere($wt_fields);
+
+			mysql_query($sql);
+			$this->setPagesAndCount($this->sql, $this->limit);
+			$i+=mysql_affected_rows();
 		}
-		//ha konkrétan egy adott táblából kell törölni
-		mysql_query("delete from `$table` where `".$field."`='".$keyValue."'");
-		$this->setPagesAndCount($this->sql, $this->limit);
-		return mysql_affected_rows();
+		return $i;
 	}
 
 	/**
@@ -676,6 +696,16 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 			return;
 		}
 		$this->$var = $value;
+	}
+
+	/**
+	 * Új rekord példányosítása a listához
+	 * 
+	 * @return IsMySQLClass
+	 */
+	public function createRecord($list=false)
+	{
+		return $this->reflectionClass()->newInstance($this->defaultTablelist,$list);
 	}
 }
 ?>

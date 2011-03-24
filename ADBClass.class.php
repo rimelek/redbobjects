@@ -45,24 +45,6 @@ abstract class ADBClass
 	public $tableAliases = array();
 
 	/**
-	 * Táblákat összekapcsoló mező neve
-	 *
-	 * @var string $keyName
-	 */
-	public $keyName="";
-
-	/**
-	 * Elsődleges kulcs mező neve
-	 *
-	 * Ezt a tulajdonságot szintén csak az {@link IIsDBListClass} interfészt
-	 * implementáló osztályok használják fel.<br />
-	 * Manuálisan sosem kell beállítani
-	 *
-	 * @var string $primary_key
-	 */
-	public $primary_key='';
-
-	/**
 	 * Táblanevet jelző string
 	 *
 	 * Amennyiben egyező nevű mezők vannak több táblában, jelölni kell a táblanevet is.<br />
@@ -70,12 +52,12 @@ abstract class ADBClass
 	 *
 	 * Például: 
 	 * <code>
-	 * $object->T_tablename_fieldname = $value;
+	 * $object->T__tablename__fieldname = $value;
 	 * </code>
 	 *
 	 * @var string $tableName_signal
 	 */
-	protected $tableName_signal = 'T_';
+	protected $tableName_signal = 'T__';
 
 	/**
 	 * Táblanevet és mezőnevet elválasztó string
@@ -84,23 +66,35 @@ abstract class ADBClass
 	 * kell jelölni a táblanév végét (Mező kezdetét)
 	 * Például: 
 	 * <code>
-	 * $object->T_tablename_fieldname = $value;
+	 * $object->T__tablename__fieldname = $value;
 	 * </code>
 	 *
 	 * @var string $table_field_sep
 	 */
-	protected $table_field_sep = '_';
+	protected $table_field_sep = '__';
 
 	/**
 	 * A táblák elsődleges kulcs mezőinek nevét tároló tömb.
 	 *
 	 * Asszociatív kétdimenziós tömb.
 	 * 1. dimenzió kulcsa a tábla neve.
-	 * 2. dimenzió kulcsa a kulcsmező neve, értéke a kulcsmez tartalma.
+	 * 2. dimenzió kulcsa a kulcsmező neve, értéke a kulcsmező tartalma.
 	 *
 	 * @var array $priKeys
 	 */
 	protected $priKeys=array();
+
+	/**
+	 * Elsődleges kulcsok lekérdezése
+	 *
+	 * @param string $tableName Tábla neve
+	 * @return array
+	 */
+	public function getPriKeys($tableName=null)
+	{
+		return is_null($tableName) ? $this->priKeys : 
+				( isset($this->priKeys[$tableName]) ? $this->priKeys[$tableName] : array() );
+	}
 
 	/**
 	 * Tábla és mezőnevet szétválasztó metódus

@@ -43,11 +43,11 @@ require_once dirname(__FILE__).'/../IIsDBClass.class.php';
  * $user = new MyClass(array(
  * 	'users'=>array('useremail','username'),
  * 	'profile'=>array('firstname','lastname','useremail')));
- * $user->keyName = 'userid';
- * $user->init(12);  //Valamilyen kapcsoló mező értéke alapján
- * //Vagy sql lekérdezés alapján. Ekkor a második paraméter true kell legyen.
- * //Első paraméter pedig az sql lekérdezés FROM kulcsszó utáni része
- * //$user->init("users left join profile where users.useremail = 'valami@ize.hu'",true);
+ *
+ * $user->init(array('id'=>12));  //Valamilyen kapcsoló mező értéke alapján
+ * //Vagy sql lekérdezés alapján.
+ * //Az sql lekérdezés FROM kulcsszó utáni része
+ * //$user->init("users left join profile where users.useremail = 'valami@ize.hu'");
  * print "A nevem: ".$user->lastname." ".$user->firstname."<br />";
  * $user->lastname = 'Új vezetéknév';
  * $user->firstname 'Új keresztnév';
@@ -76,23 +76,6 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	public $new_properties = array();
 
 	/**
-	*	A táblákat összekapcsoló mező értéke
-	*
-	*	Ezt a mezőt csak az {@link IsDBList} osztály használja, hogy visszaadja az utoljára hozzáadott rekord
-	*	összekapcsoló mezőjének értékét.
-	*
-	*	@var string $keyValue;
-	*/
-	public $keyValue="";
-
-	/**
-	*	Sql kérés volt-e megadva az init() paramétereként.
-	*
-	*	@var string $isSqlQuery
-	*/
-	protected $isSqlQuery = false;
-
-	/**
 	*	IsMySQLClass osztály konstruktora
 	*
 	*	@param array $tablelist Két dimenziós tömb. Formátuma:
@@ -100,7 +83,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	*	@param bool $list Ha false, akkor nem kérdezi le a mezőneveket előre.
 	*/
 	public function __construct($tablelist,$list=false)
-	{
+	{ 
 		$this->tablelist = $tablelist;
 		if (!$list) {
 			$this->getFields();
@@ -120,14 +103,12 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	 *
 	 * Ez a metódus választja ki a táblákból azt az egy rekordot, amiből létrehozza az objektumtulajdonságokat.
 	 *
-	 * @param mixed $rowid Azonosító, ami minden táblában azonos értékű
-	 * @param bool $bool Ha true, akkor a $rowid lehet sql utasítás ( csak a from kulcsszó utáni rész )
+	 * @param mixed $rowid Azonosító array(mező=>érték) formában, vagy sql utasítás "from" utáni része.
 	 */
-	public function init($rowid,$bool=false)
+	public function init($rowid)
 	{
 		//ha sql lekérdezéssel inicializáljuk az objektumot
-		if ($bool) {
-			$this->isSqlQuery=true;
+		if (!is_array($rowid)) {
 			$afields = array();
 			//végig kell menni a táblalistánés összeállítani a lekérdezendő mezőlistát
 			foreach($this->tablelist as $tableName=>$fieldList)
@@ -138,11 +119,10 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 					$afields[] = "`$tableName`.`$field` as `$tableName.$field`";
 				}
 				//ha az elsődleges kulcs mezőt nem kértük le, akkor automatikusan lekérdezéshez adódik
-				if (!isset($fieldList[key($this->priKeys[$tableName])])) {
-					$afields[] = "`$tableName`.`".
-						key($this->priKeys[$tableName]).
-						"` as `$tableName.".key($this->priKeys[$tableName])."`";
-
+				foreach($this->priKeys[$tableName] as $pkn => $pkv) {
+					if (!isset($fieldList[$pkn])) {
+						$afields[] = "`$tableName`.`$pkn` as `$tableName.$pkn`";
+					}
 				}
 			}
 			$fields = implode(",\n",$afields);
@@ -158,26 +138,32 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 						$this->properties[$tableName][$field] = $fetch[$tableName.'.'.$field];
 					}
 					//az elsődleges kulcsok értékeit külön is tárolni kell egy tömbben
-					$this->priKeys[$tableName][key($this->priKeys[$tableName])] =
-						$fetch[$tableName.'.'.key($this->priKeys[$tableName])];
+					foreach ($this->priKeys[$tableName] as $pkn => $pkv) {
+						$this->priKeys[$tableName][$pkn] = $fetch[$tableName.'.'.$pkn];
+					}
 				}
 			}
 			return;
 		}
 		//Ez a rész már csak akkor fut le, ha nem sql lekérdezéssel, hanem mező értékkel  inicializáltuk az objektumot
 
-		//A kapcsoló mező nevére szükség van. Ezért ha nincs megadva, kivételt kell dobni
-		if (trim($this->keyName) == "") throw new NotIssetPropertyException(__CLASS__."::keyName nincs beállítva!");
-
-		$this->keyValue = $rowid;
 		//végig kell menni ciklusban az összes táblán, és lekérdezni a mezők értékeit
 		foreach ($this->tablelist as $tableName=>$fieldList) {
+			foreach ($this->priKeys[$tableName] as $pkn => $pkv) {
+				$fieldList[] = $pkn;
+			}
+			$fieldList = array_unique($fieldList);
 			$fields = '`'.implode('`, `',$fieldList).'`';
 			$t = (isset($this->tableAliases[$tableName])) ? $this->tableAliases[$tableName] : $tableName;
-			$sql = "select $fields from `$t` where `".$this->keyName."` = '$rowid' limit 1";
+			$sql = "select $fields from `$t` where ".REDBObjects::createWhere($rowid)." limit 1";
 			if($fetch = mysql_fetch_assoc(mysql_query($sql)))
-			{
+			{ 
 				$this->properties[$tableName] = $fetch;
+				foreach ($this->priKeys[$tableName] as $pkn => $pkv) {
+					if (isset($fetch[$pkn])) {
+						$this->priKeys[$tableName][$pkn] = $fetch[$pkn];
+					}
+				}
 			}
 		}
 	}
@@ -187,7 +173,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	 * és beállítása tulajdonságnak
 	 */
 	public function getFields()
-	{
+	{ 
 		//a táblákat végigjárva az összes mezőjének nevét lekérdezi, így az indexek mindig léteznek,
 		//és az update() metódus akor is kiszűri a nem létező neveket, ha nem volt inicializálva az objektum
 		$fields = array();
@@ -220,17 +206,12 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 				{
 					$this->properties[$tableName][$field['Field']] = '';
 				}
-				//Ha ez az elsődleges kulcs mező, akkor visszaadja a primary_key
-				//tulajdonságnak, hogy a kapcsoló mező elsődleges kulcs
-				if ($this->keyName == $field['Field'])
-				{
-					$this->primary_key = $field['Field'];
-				}
+
 				//minden elsődleges kulcs mező értékét külön is tároljuk,
 				//ezért előtte biztositjuk a helyet neki üres értékkel
 				if ($field['Key'] == 'PRI')
 				{
-					$this->priKeys[$tableName] = array($field['Field']=>'');
+					$this->priKeys[$tableName][$field['Field']] = '';
 				}
 			}
 			//Mivel elsődleges kulcs mezőkre mindenképp szükség van,
@@ -417,9 +398,6 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 			if ($refreshDB) {
 				//Akkor ha van mit frissíteni
 				if (count($this->new_properties[$tableName])) {
-					//el kell dönteni mi az updatelés feltétele. hhez kell a keyValue, és a keyName
-					$keyName = ($this->isSqlQuery) ? key($this->priKeys[$tableName]) : $this->keyName;
-					$keyValue = ($this->isSqlQuery) ? current($this->priKeys[$tableName]) : $this->keyValue;
 					$update = array();
 					//most már lehet összeállítani az sql utasítást
 					foreach ($this->new_properties[$tableName] as $fieldName=>$value )
@@ -428,7 +406,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 					}
 					$update = implode(', ',$update);
 					$t = (isset($this->tableAliases[$tableName])) ? $this->tableAliases[$tableName] : $tableName;
-					$sql = "update `$t` set $update where `".$keyName."` = '".$keyValue."'";
+					$sql = "update `$t` set $update where ".$this->_getPKCond($tableName);
 					$query = mysql_query($sql);
 				}
 			}
@@ -446,6 +424,17 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 				$this->new_properties[$tableName] = array();
 			}
 		}
+	}
+
+	/**
+	 * Elsődleges kulcs(ok) where feltételhez.
+	 * 
+	 * @param string $tableName Tábla neve
+	 */
+	private function _getPKCond($tableName)
+	{
+		$pk_where = array();
+		return REDBObjects::createWhere($this->priKeys[$tableName]);
 	}
 
 	/**

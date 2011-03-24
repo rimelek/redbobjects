@@ -46,6 +46,22 @@ class REDBObjects
 		}
 		return true;
 	}
+
+	/**
+	 *
+	 * @param array $array
+	 * @param bool $or
+	 */
+	public static function createWhere($array, $or=false)
+	{
+		$sep = $or ? ' or ' : ' and ';
+		$where = array();
+		foreach ($array as $k => $v) {
+			$k = '`'.str_replace('.', '`.`', $k).'`';
+			$where[] = " ".$k." = '".mysql_real_escape_string($v)."' ";
+		}
+		return implode($sep, $where);
+	}
 }
 
 ?>
