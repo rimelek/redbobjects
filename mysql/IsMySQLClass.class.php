@@ -53,7 +53,7 @@ require_once dirname(__FILE__).'/../IIsDBClass.class.php';
  * $user->firstname 'Új keresztnév';
  * //Vagy akár így is:
  * //$user['lastname'] = 'Új vezetéknév';
- * $user->T_profile_useremail = 'Új publikus emailcím';
+ * $user->T__profile__useremail = 'Új publikus emailcím';
  * //Ez a metódus végzi el a frissítést. Enélkül nem kerül adatbázisba az új adat
  * $user->update();
  * </code>
@@ -68,6 +68,32 @@ require_once dirname(__FILE__).'/../IIsDBClass.class.php';
  */
 class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 {
+
+	/**
+	 * Csak következő frissítésig, vagy hozzáadásig
+	 */
+	const NQ_LEVEL_NOW = 'nq_level_now';
+
+	/**
+	 * Mindig
+	 */
+	const NQ_LEVEL_EVER = 'nq_level_ever';
+
+	/**
+	 * Legyen idézőjelezve mező
+	 */
+	const NQ_LEVEL_QUOTED = false;
+
+	/**
+	 * Ne legyen idézőjelbe rakva sql utasításban az adat.
+	 * Mezők listája. array(tabla=>array(mezo=> array(
+	 *					current => x,
+	 *					default => y
+	 *				)))
+	 *
+	 * @var array
+	 */
+	private $nonquoted = array();
 	/**
 	*	Az értékadás feltöltődő asszociatív tömb
 	*
@@ -284,35 +310,10 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	 * @ignore
 	 */
 	public function __set($var,$value)
-	{ 	$table=''; $field=''; $hit=false;
-		//Meg kell állapítani a mező és táblanevet, ha értékadáskor a táblanevet is megadtuk
-		$issep = $this->sep_table_field($var,$table,$field);
-		//amennyiben tényleg megadták a táblanevet, a meghatározott mezőnevet be kell állítani
-		if ($issep) {
-			$var = $field;
-		}
-		//Jöhet a táblák pásztázása egyenként
-		foreach ($this->tablelist as $tableName=>$fieldList)
-		{
-			//ha a táblanevet is megadták, de épp nem ez az a tábla,
-			//akkor tovább lehet menni a következő táblára
-			if($issep and $tableName != $table)
-			{
-				continue;
-			}
-			//függetlenül attól, más táblának is volt-e ilyen mezője
-			//átadható az érték az új értékeknek
-			if (array_key_exists($var,$this->properties[$tableName])) {
-				$this->new_properties[$tableName][$var] = $value;
-				$hit=true;
-				//De ha meg volt adva a táblanév is, akkor kész vagyunk. A program leáll
-				if ($issep) {
-					return;
-				}
-			}
-		}
+	{
+
 		//Ha volt találat, kiléphetünk a programból
-		if ($hit) return;
+		if ($this->set($var, $value)) return;
 		//ha nem votl találat, de vagy a tableName_signal vagy a table_field_sep változó üres
 		if (($var == 'tableName_signal' or $var == 'table_field_sep') and trim($value) == '') {
 			//kivételt kell dobni, mert azok nem lehetnek sosem üresek
@@ -402,7 +403,12 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 					//most már lehet összeállítani az sql utasítást
 					foreach ($this->new_properties[$tableName] as $fieldName=>$value )
 					{
-						$update[] = "`$fieldName` = '".mysql_real_escape_string($value)."' ";
+						if (!$this->isNonQuoted($tableName, $fieldName)) {
+							$value = "'".  mysql_real_escape_string($value)."'";
+						}
+						//Minden érték visszaállítása alapra
+						$this->resetNonQuoted($tableName, $fieldName);
+						$update[] = "`$fieldName` = $value ";
 					}
 					$update = implode(', ',$update);
 					$t = (isset($this->tableAliases[$tableName])) ? $this->tableAliases[$tableName] : $tableName;
@@ -576,6 +582,105 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 			if($exists = array_key_exists($index,$table)) {
 				unset($table[$index]);
 			}
+		}
+	}
+
+	/**
+	 *
+	 * @param string $var Mező neve
+	 * @param mixed $value Új érték
+	 * @param bool $quoted Legyen-e idézőjelezve
+	 *
+	 * @param bool Volt-e $var nevű, beállítható mező
+	 */
+	public function set($var, $value, $quoted=true)
+	{
+		$table=''; $field=''; $hit=false;
+		//Meg kell állapítani a mező és táblanevet, ha értékadáskor a táblanevet is megadtuk
+		$issep = $this->sep_table_field($var,$table,$field);
+		//amennyiben tényleg megadták a táblanevet, a meghatározott mezőnevet be kell állítani
+		if ($issep) {
+			$var = $field;
+		}
+		//Jöhet a táblák pásztázása egyenként
+		foreach ($this->tablelist as $tableName=>$fieldList)
+		{
+			//ha a táblanevet is megadták, de épp nem ez az a tábla,
+			//akkor tovább lehet menni a következő táblára
+			if($issep and $tableName != $table)
+			{
+				continue;
+			}
+			//függetlenül attól, más táblának is volt-e ilyen mezője
+			//átadható az érték az új értékeknek
+			if (array_key_exists($var,$this->properties[$tableName])) {
+				$this->new_properties[$tableName][$var] = $value;
+				//Legyen-e idézőjelezve
+				if (!$quoted and !$this->isNonQuoted($tableName, $var)) {
+					$this->setNonQuoted($tableName, $var, self::NQ_LEVEL_NOW, true);
+				}
+				$hit=true;
+				//De ha meg volt adva a táblanév is, akkor kész vagyunk. A program leáll
+				if ($issep) {
+					return true;
+				}
+			}
+		}
+		return $hit;
+	}
+
+	/**
+	 *
+	 * @param string $tableName Tábla neve ( alias, ha van )
+	 * @param string $field Mező neve
+	 * @return bool 
+	 */
+	public function isNonQuoted($tableName, $field)
+	{
+		return in_array($this->getNonQuotedLevel($tableName, $field), array(
+			self::NQ_LEVEL_EVER, self::NQ_LEVEL_NOW
+		));
+	}
+
+
+	/**
+	 *
+	 * @param string $tableName
+	 * @param string $field
+	 * @return mixed
+	 */
+	public function getNonQuotedLevel($tableName, $field, $default_level=false)
+	{
+		if (!isset($this->nonquoted[$tableName][$field])) {
+			$this->nonquoted[$tableName][$field] = array(
+				'current' => self::NQ_LEVEL_QUOTED,
+				'default' => self::NQ_LEVEL_QUOTED
+			);
+		}
+		return $this->nonquoted[$tableName][$field][$default_level ? 'default' : 'current' ];
+	}
+
+	/**
+	 *
+	 * @param string $tableName Tábla neve ( alias, ha van )
+	 * @param string $field Mező neve
+	 */
+	public function setNonQuoted($tableName, $field, $level=self::NQ_LEVEL_NOW, $current=false)
+	{
+
+		$this->nonquoted[$tableName][$field]['current'] = $level;
+		if (!$current) {
+			$this->nonquoted[$tableName][$field]['default'] = $level;
+		}
+	}
+
+	public function resetNonQuoted($tableName, $field)
+	{
+		$default = $this->getNonQuotedLevel($tableName, $field, true);
+		if ($default == self::NQ_LEVEL_NOW) {
+			$this->setNonQuoted($tableName, $field, self::NQ_LEVEL_QUOTED);
+		} else {
+			$this->setNonQuoted($tableName, $field, $default);
 		}
 	}
 }

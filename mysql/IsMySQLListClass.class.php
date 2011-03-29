@@ -376,7 +376,11 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 			{
 				//a mezőneveket és az értékeiket külön tömbbe tölti.
 				$fieldNames[] = "`$fieldName`";
-				$fieldValues[] = "'$fieldValue'";
+				if (!$object->isNonQuoted($tableName, $fieldName)) {
+					$fieldValue = "'$fieldValue'";
+				}
+				
+				$fieldValues[] = $fieldValue;
 			}
 			//vesszővel elválasztott formátumba konvertálja az értékek és nevek tömbjeit
 			$fieldValues = implode(', ',$fieldValues);
