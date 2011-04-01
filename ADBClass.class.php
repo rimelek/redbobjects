@@ -27,8 +27,15 @@ abstract class ADBClass
 	* A lekérdezhető mezők asszociatív tömbje
 	* @var array $properties
 	*/
-
 	protected $properties = array();
+
+	/**
+	 * Virtuális mezők asszociatív tömbje
+	 *
+	 * @var array
+	 */
+	protected $virtualFields = array();
+
 
 	/**
 	* A megvalósítandó táblák listája
@@ -94,6 +101,22 @@ abstract class ADBClass
 	{
 		return is_null($tableName) ? $this->priKeys : 
 				( isset($this->priKeys[$tableName]) ? $this->priKeys[$tableName] : array() );
+	}
+
+	/**
+	 * Virtuális mezők lekérdezése
+	 *
+	 * @param string $name Mező táblával együtt (T__tabla__mezo) ha $field null
+	 * @param string Mező neve. Tábla nélkül. Ekkor a $name csak a tábla
+	 * @return string Mező értéke. null, ha nincs ilyen virtális mező. 
+	 */
+	public function getVirtualField($name, $field = null)
+	{
+		if (($field and $table = $name) or $this->sep_table_field($name, $table, $field)) {
+			return isset($this->virtualFields[$table][$field]) ? $this->virtualFields[$table][$field] : null;
+		} else {
+			return isset($this->virtualFields[0][$name]) ? $this->virtualFields[0][$name] : null;
+		}
 	}
 
 	/**

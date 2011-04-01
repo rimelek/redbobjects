@@ -266,6 +266,11 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 					$afields[] = "`$tableName`.`$pkn` as `$tableName.$pkn`";
 				}
 			}
+
+			//virtuális mezők felvétele mező listába
+			foreach ($this->virtualFields[$tableName] as $fn => $fv) {
+				$afields[] = " ($fv) as `.$tableName.$fn` ";
+			}
 		}
 
 		if ($this->page === null)
@@ -321,6 +326,14 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 				}
 			}
 
+			foreach ($fetch as $key => &$value) {
+				if (substr($key, 0,1) == '.') {
+					list(,$tableName,$f) = explode('.',$key);
+					$this->virtualFields[$tableName][$f] = $value;
+					unset($value);
+				}
+			}
+			
 			//Az összes olyan tulajdonság beállítása az új objektumnak, ami a lista objektummal közös
 			foreach ($props as $prop=>$value) {
 				$record->$prop = $this->$prop;
@@ -450,6 +463,14 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 				unset($this->tablelist[$tableName]);
 				$tableName = $alias;
 			}
+			//virtuaális mezők
+			foreach ($fieldList as $fn => &$fv) {
+				if (!is_numeric($fn)) {
+					$this->virtualFields[$tableName][$fn] = $fv;
+					unset($this->tablelist[$tn][$fn]);
+				}
+			}
+			
 			$query = mysql_query("show columns from `".$from."`");
 			$in = false;
 			while ($field = mysql_fetch_assoc($query))

@@ -109,7 +109,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	*	@param bool $list Ha false, akkor nem kérdezi le a mezőneveket előre.
 	*/
 	public function __construct($tablelist,$list=false)
-	{ 
+	{
 		$this->tablelist = $tablelist;
 		if (!$list) {
 			$this->getFields();
@@ -150,6 +150,12 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 						$afields[] = "`$tableName`.`$pkn` as `$tableName.$pkn`";
 					}
 				}
+
+				//virtuális mezők felvétele mező listába
+				foreach ($this->virtualFields[$tableName] as $fn => $fv) {
+					$afields[] = " ($fv) as `.$tableName.$fn` ";
+				}
+
 			}
 			$fields = implode(",\n",$afields);
 			$i=0;
@@ -168,6 +174,11 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 						$this->priKeys[$tableName][$pkn] = $fetch[$tableName.'.'.$pkn];
 					}
 				}
+				foreach ($this->virtualFields as $tableName => &$fieldList) {
+					foreach ($fieldList as $fn => &$fv) {
+						$fv = $fetch['.'.$tableName.'.'.$fn];
+					}
+				}
 			}
 			return;
 		}
@@ -175,15 +186,26 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 
 		//végig kell menni ciklusban az összes táblán, és lekérdezni a mezők értékeit
 		foreach ($this->tablelist as $tableName=>$fieldList) {
+			//virtuális mezők felvétele mező listába
+			foreach ($this->virtualFields[$tableName] as $fn => $fv) {
+				$fieldList[] = " ($fv) as `.$tableName.$fn` ";
+			}
 			foreach ($this->priKeys[$tableName] as $pkn => $pkv) {
-				$fieldList[] = $pkn;
+				$fieldList[] = "`$pkn`";
 			}
 			$fieldList = array_unique($fieldList);
-			$fields = '`'.implode('`, `',$fieldList).'`';
+			$fields = implode(",\n", $fieldList);
 			$t = (isset($this->tableAliases[$tableName])) ? $this->tableAliases[$tableName] : $tableName;
 			$sql = "select $fields from `$t` where ".REDBObjects::createWhere($rowid)." limit 1";
 			if($fetch = mysql_fetch_assoc(mysql_query($sql)))
-			{ 
+			{
+				foreach ($fetch as $key => &$value) {
+					if (substr($key, 0,1) == '.') {
+						list(,,$f) = explode('.',$key);
+						$this->virtualFields[$tableName][$f] = $value;
+						unset($value);
+					}
+				}
 				$this->properties[$tableName] = $fetch;
 				foreach ($this->priKeys[$tableName] as $pkn => $pkv) {
 					if (isset($fetch[$pkn])) {
@@ -216,6 +238,15 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 				unset($this->tablelist[$tableName]);
 				$tableName = $alias;
 			}
+
+			//virtuaális mezők
+			foreach ($fieldList as $fn => &$fv) {
+				if (!is_numeric($fn)) {
+					$this->virtualFields[$tableName][$fn] = $fv;
+					unset($this->tablelist[$tn][$fn]);
+				}
+			}
+
 			$query = mysql_query("show columns from `".$from."`");
 			$in = false;
 			while ($field = mysql_fetch_assoc($query))
@@ -223,7 +254,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 				//ha az összes mezőt * karakterrel jelöltük
 				if (($_in = $in) !== false or ($in = array_search('*',$fieldList)) !== false)
 				{
-					//akkor törölhető a lista és felvehetők az mezőnevek egyenként
+					//akkor törölhető a lista és felvehetők a mezőnevek egyenként
 					if ($_in === false) $this->tablelist[$tableName] = array();
 					$this->tablelist[$tableName][] = $field['Field'];
 
