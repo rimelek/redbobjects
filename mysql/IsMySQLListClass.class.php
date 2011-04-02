@@ -116,7 +116,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * @ignore
 	 */
 	protected $itTableIndex=0;
-	
+
 	/**
 	 * Aktuális mezőindex az iterációnál
 	 *
@@ -201,6 +201,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 */
 	protected function setPagesAndCount($sql, $limit)
 	{
+		if (!$sql) return;
 		$this->sql = $sql;
 		$this->limit = $limit;
 		//Lekérdezésre illeszkedő sorok száma limit nélkül
@@ -306,7 +307,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 		//Az ADBClass absztrakt osztály tulajdonságainak lekérdezése
 		$ref = new ReflectionClass('ADBClass');
 		$props = $ref->getDefaultProperties();
-		
+
 		while($fetch = mysql_fetch_assoc($query)) {
 			//objektumok létrehozása
 			//Egy példány létrehozása a listában tárolandó objektumtípusból
@@ -333,7 +334,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 					unset($value);
 				}
 			}
-			
+
 			//Az összes olyan tulajdonság beállítása az új objektumnak, ami a lista objektummal közös
 			foreach ($props as $prop=>$value) {
 				$record->$prop = $this->$prop;
@@ -355,7 +356,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 *
 	 * mysql_connect('localhost', 'root', 'password');
 	 * mysql_select_db('teszt');
-	 * 
+	 *
 	 * class MyClass extends IsMySQLClass {}
 	 * class MyList extends IsMySQLListClass {}
 	 * $tablelist = array(
@@ -392,7 +393,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 				if (!$object->isNonQuoted($tableName, $fieldName)) {
 					$fieldValue = "'$fieldValue'";
 				}
-				
+
 				$fieldValues[] = $fieldValue;
 			}
 			//vesszővel elválasztott formátumba konvertálja az értékek és nevek tömbjeit
@@ -470,7 +471,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 					unset($this->tablelist[$tn][$fn]);
 				}
 			}
-			
+
 			$query = mysql_query("show columns from `".$from."`");
 			$in = false;
 			while ($field = mysql_fetch_assoc($query))
@@ -511,7 +512,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * Egy táblát le lehet vele védeni, hogy a megvalósított listában egy törlés
 	 * esetén abból a táblából ne lehessen semmit sem kitörölni. Hasznos, ha például
 	 * egy üzenetlistából törlünk felhasználói azonosító alapján a {@link delete()} -el,
-	 * és nem szeretnénk, hogy a felhasználó is törlődjön. 
+	 * és nem szeretnénk, hogy a felhasználó is törlődjön.
 	 *
 	 * @param string $table Levédendő tábla neve. Akár {@link $tableName_signal} -al együtt
 	 */
@@ -540,7 +541,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * @see IIsDBListClass::delete()
 	 * @param mixed $keyName Mező neve, ami alapján törölni kell. Vagy
 	 *		asszociatív tömb. Kulcs a keyName, érték a keyValue (több is adható)
-	 * @param string $keyValue Mező értéke, ami alapján törölni kell. 
+	 * @param string $keyValue Mező értéke, ami alapján törölni kell.
 	 * @return mixed true, ha sikeres a törlés, egyébként a MySQL hibaüzenet
 	 */
 	public function delete($keyName,$keyValue=null)
@@ -548,7 +549,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 		$table = "";
 		$field = "";
 		$i=0;
-		
+
 		if (!is_array($keyName)) {
 			$keyName = array($keyName => $keyValue);
 		}
@@ -564,7 +565,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 				$keys['wot'][$kn] = $kv;
 			}
 		}
-		
+
 		foreach ($keys['wot'] as $wot_field => $wot_value)
 		{
 			foreach ($this->properties as $t => &$f)
@@ -587,9 +588,9 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 			$sql = "delete from `$wt_table` where ".REDBObjects::createWhere($wt_fields);
 
 			mysql_query($sql);
-			$this->setPagesAndCount($this->sql, $this->limit);
 			$i+=mysql_affected_rows();
 		}
+		$this->setPagesAndCount($this->sql, $this->limit);
 		return $i;
 	}
 
@@ -668,7 +669,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	{
 		return $this->records[$index];
 	}
-	
+
 	/**
 	 * Adott indexű elem értékének beállítása
 	 *
@@ -678,7 +679,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 */
 	public function offsetSet($index,$value)
 	{
-		
+
 	}
 
 	/**
@@ -689,7 +690,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 */
 	public function offsetUnset($index)
 	{
-		
+
 	}
 
 	/**
@@ -725,7 +726,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 
 	/**
 	 * Új rekord példányosítása a listához
-	 * 
+	 *
 	 * @return IsMySQLClass
 	 */
 	public function createRecord($list=false)
