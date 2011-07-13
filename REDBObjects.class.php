@@ -37,7 +37,7 @@ class REDBObjects
 		$files = scandir($dir);
 		foreach ($files as $file)
 		{
-			if ($file == '.' or $file == '..')
+			if (is_dir($dir.'/'.$file))
 			{
 				continue;
 			}
