@@ -226,7 +226,7 @@ abstract class ADBListClass extends ADBClass
 			$pageLinks .= " &nbsp; ";
 		}
 
-		for ($i=1+$linkoffset; $i <= $linkend; $i++)
+		for ($i=1+$linkoffset; $i <= $linkend and $i < $maxpage; $i++)
 		{
 			$url = self::setUrl(array($pagevar=>$i));
 			$class = ($i == $page) ? "pagelink current" : "pagelink";
@@ -289,4 +289,3 @@ abstract class ADBListClass extends ADBClass
 	}
 
 }
-?>

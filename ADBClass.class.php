@@ -140,4 +140,3 @@ abstract class ADBClass
 		return false;
 	}
 }
-?>

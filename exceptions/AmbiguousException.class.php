@@ -28,4 +28,3 @@ class AmbiguousException extends Exception {
 				$this->getTraceAsString();
 	}
 } 
-?>

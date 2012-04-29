@@ -63,5 +63,3 @@ class REDBObjects
 		return implode($sep, $where);
 	}
 }
-
-?>

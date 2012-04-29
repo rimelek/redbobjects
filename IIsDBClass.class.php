@@ -55,4 +55,3 @@ interface IIsDBClass extends Countable
 	 */
 	function init($rowid);
 }
-?>

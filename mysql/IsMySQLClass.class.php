@@ -715,4 +715,3 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 		}
 	}
 }
-?>

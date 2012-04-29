@@ -23,4 +23,3 @@ class NotIssetPropertyException extends Exception {
 				$this->getTraceAsString();
 	}
 }
-?>

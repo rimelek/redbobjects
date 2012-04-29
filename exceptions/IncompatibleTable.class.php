@@ -24,4 +24,3 @@ class IncompatibleTable extends Exception {
 				$this->getTraceAsString();
 	}
 }
-?>

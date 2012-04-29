@@ -23,4 +23,3 @@ class IteratorEndException extends Exception {
 				$this->getTraceAsString();
 	}
 }
-?>

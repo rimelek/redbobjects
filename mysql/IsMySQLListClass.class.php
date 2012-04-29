@@ -734,4 +734,3 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 		return $this->reflectionClass()->newInstance($this->defaultTablelist,$list);
 	}
 }
-?>

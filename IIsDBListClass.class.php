@@ -63,4 +63,3 @@ interface IIsDBListClass extends Countable
 	 */
 	function countRecords();
 }
-?>
