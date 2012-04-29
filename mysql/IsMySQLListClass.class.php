@@ -5,7 +5,6 @@
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * @copyright Copyright (C) 2010, Takács Ákos
  * 
- * @license http://www.gnu.org/licenses/lgpl.html
  * @package REDBObjects
  */
 
@@ -69,8 +68,7 @@ require_once dirname(__FILE__).'/IsMySQLClass.class.php';
  * @property string $table_field_sep Táblanevet és mezőnevet elválasztó jel
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
- * @copyright Copyright (C) 2010, Takács Ákos
- * @license http://www.gnu.org/licenses/lgpl.html
+ * 
  * @package REDBObjects
  */
 class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator, ArrayAccess

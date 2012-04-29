@@ -3,9 +3,7 @@
  * R.E. DB Objects
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
- * @copyright Copyright (C) 2010, Takács Ákos
  * 
- * @license http://www.gnu.org/licenses/lgpl.html
  * @package REDBObjects
  */
 
@@ -13,8 +11,7 @@
  * Project kezelő osztály
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
- * @copyright Copyright (C) 2010, Takács Ákos
- * @license http://www.gnu.org/licenses/lgpl.html
+ * 
  * @package REDBObjects
  */
 class REDBObjects

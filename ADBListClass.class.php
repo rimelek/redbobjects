@@ -3,9 +3,7 @@
  * R.E. DBObjects
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
- * @copyright Copyright (C) 2010, Takács Ákos
  * 
- * @license http://www.gnu.org/licenses/lgpl.html
  * @package REDBObjects
  */
 
@@ -20,8 +18,7 @@ require_once dirname(__FILE__).'/ADBClass.class.php';
  * Minden lista lapozható
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
- * @copyright Copyright (C) 2010, Takács Ákos
- * @license http://www.gnu.org/licenses/lgpl.html
+ * 
  * @package REDBObjects
  */
 abstract class ADBListClass extends ADBClass
