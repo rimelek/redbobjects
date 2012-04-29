@@ -4,7 +4,7 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * @copyright Copyright (C) 2010, Takács Ákos
- * @version 2.1
+ * 
  * @license http://www.gnu.org/licenses/lgpl.html
  * @package REDBObjects
  */
