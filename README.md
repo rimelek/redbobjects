@@ -5,7 +5,7 @@ to understand why this project is here at all.
 
 ## History
 
-R.E. DBObjects was started in 2011 as a project which helped me to learn about
+R.E. DBObjects was started in 2012 as a project which helped me to learn about
 [ORM](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping) when I probably didn't even know what ORM was.
 I used it mainly in R.E. Login, which became popular mainly among other beginners, and people still find me from time
 to time to ask me if I would ever continue the project.
