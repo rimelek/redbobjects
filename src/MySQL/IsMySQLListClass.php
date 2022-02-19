@@ -11,22 +11,22 @@
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/../ADBListClass.class.php';
+require_once dirname(__FILE__) . '/../ADBListClass.php';
 
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/../IIsDBListClass.class.php';
+require_once dirname(__FILE__) . '/../IIsDBListClass.php';
 
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/../IIsDBClass.class.php';
+require_once dirname(__FILE__) . '/../IIsDBClass.php';
 
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/IsMySQLClass.class.php';
+require_once dirname(__FILE__) . '/IsMySQLClass.php';
 
 /**
  * Lista osztály
@@ -43,7 +43,7 @@ require_once dirname(__FILE__).'/IsMySQLClass.class.php';
  * </ul>
  *
  * <code>
- * require_once 'REDBObjects/REDBObjects.class.php';
+ * require_once 'REDBObjects/REDBObjects.php';
  * REDBObjects::uses('mysql');
  *
  * mysql_connect('localhost', 'root', 'password');
@@ -351,7 +351,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 	 * Csak egy értékekkel feltöltött, példányosított {@link IsMySQLClass} típusú objektumra van szükség.
 	 *
 	 * <code>
-	 * require_once 'REDBObjects/REDBObjects.class.php';
+	 * require_once 'REDBObjects/REDBObjects.php';
 	 * REDBObjects::uses('mysql');
 	 *
 	 * mysql_connect('localhost', 'root', 'password');
@@ -502,7 +502,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 			//ezért kivételt kell dobni, ha egy tábla nem tartalmaz olyan mezőt.
 			if ( !isset($this->priKeys[$tableName]) )
 			{
-				require_once dirname(__FILE__).'/../exceptions/IncompatibleTable.class.php';
+				require_once dirname(__FILE__) . '/../Exceptions/IncompatibleTable.php';
 				throw new IncompatibleTable("Egyedi elsődleges kulcs mező használata kötelező! Tábla: ".$tableName);
 			}
 		}

@@ -10,7 +10,7 @@
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/ADBClass.class.php';
+require_once dirname(__FILE__) . '/ADBClass.php';
 
 /**
  * Lista osztályok tulajdonságai.

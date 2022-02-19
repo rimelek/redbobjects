@@ -10,12 +10,12 @@
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/../ADBClass.class.php';
+require_once dirname(__FILE__) . '/../ADBClass.php';
 
 /**
  * @ignore
  */
-require_once dirname(__FILE__).'/../IIsDBClass.class.php';
+require_once dirname(__FILE__) . '/../IIsDBClass.php';
 
 /**
  * Adatbázis táblákat megvalósító osztály
@@ -31,7 +31,7 @@ require_once dirname(__FILE__).'/../IIsDBClass.class.php';
  *
  * <b>Az osztály helyes használata:</b><br />
  * <code>
- * require_once 'REDBObjects/REDBObjects.class.php';
+ * require_once 'REDBObjects/REDBObjects.php';
  * REDBObjects::uses('mysql');
  *
  * mysql_connect('localhost', 'root', 'password');
@@ -276,7 +276,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 			//ezért kivételt kell dobni, ha egy tábla nem tartalmaz olyan mezőt.
 			if ( !isset($this->priKeys[$tableName]) )
 			{
-				require_once dirname(__FILE__).'/../exceptions/IncompatibleTable.class.php';
+				require_once dirname(__FILE__) . '/../Exceptions/IncompatibleTable.php';
 				throw new IncompatibleTable("Egyedi elsődleges kulcs mező használata kötelező! Tábla: ".$tableName);
 			}
 		}
@@ -312,7 +312,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 				//mert nem tudni melyiket kell lekérdezni
 				if ($hit)
 				{
-					require_once dirname(__FILE__).'/../exceptions/AmbiguousException.class.php';
+					require_once dirname(__FILE__) . '/../Exceptions/AmbiguousException.php';
 					throw new AmbiguousException(get_class($this)."::$var nem egyértelmű!");
 				}
 				//a visszatérési értéket be lehet állítani előre
@@ -326,7 +326,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 			return $this->$var;
 		//de ha még az objektumnak sincs ilyen tulajdonsága, akkor kivételt dobunk
 		} else {
-			require_once dirname(__FILE__).'/../exceptions/NotIssetPropertyException.class.php';
+			require_once dirname(__FILE__) . '/../Exceptions/NotIssetPropertyException.php';
 			throw new NotIssetPropertyException(get_class($this)."::$var nem létezik!");
 		}
 	}
@@ -349,7 +349,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 		//ha nem votl találat, de vagy a tableName_signal vagy a table_field_sep változó üres
 		if (($var == 'tableName_signal' or $var == 'table_field_sep') and trim($value) == '') {
 			//kivételt kell dobni, mert azok nem lehetnek sosem üresek
-			require_once dirname(__FILE__).'/../exceptions/NotIssetPropertyException.class.php';
+			require_once dirname(__FILE__) . '/../Exceptions/NotIssetPropertyException.php';
 			throw new NotIssetPropertyException(get_class($this)."::$var nem maradhat üresen!");
 		}
 		//végül az objektum tulajdonságnak kell átadni az értéket, ha másnak nem lehetett
@@ -390,7 +390,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 				//mert nem tudni melyiket kell lekérdezni
 				if ($hit)
 				{
-					require_once dirname(__FILE__).'/../exceptions/AmbiguousException.class.php';
+					require_once dirname(__FILE__) . '/../Exceptions/AmbiguousException.php';
 					throw new AmbiguousException(get_class($this)."::$var nem egyértelmű!");
 				}
 				//a visszatérési értéket be lehet állítani előre
@@ -502,7 +502,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 		$k2 = key($this->properties[key($this->properties)]);
 		if ($k1 === null or $k2 === null)
 		{
-			require_once dirname(__FILE__).'/../exceptions/IteratorEndException.class.php';
+			require_once dirname(__FILE__) . '/../Exceptions/IteratorEndException.php';
 			throw new IteratorEndException();
 		}
 		return current($this->properties[$k1]);
@@ -554,7 +554,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
 	 */
 	public function valid()
 	{
-		require_once dirname(__FILE__).'/../exceptions/IteratorEndException.class.php';
+		require_once dirname(__FILE__) . '/../Exceptions/IteratorEndException.php';
 		try
 		{
 			$this->current();
