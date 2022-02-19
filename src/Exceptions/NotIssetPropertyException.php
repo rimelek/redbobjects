@@ -6,6 +6,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects\Exceptions;
 
 /**
  * NotIssetPropertyException
@@ -16,7 +17,7 @@
  * 
  * @package REDBObjects
  */
-class NotIssetPropertyException extends Exception {
+class NotIssetPropertyException extends \Exception {
 	function __toString() {
 		return __CLASS__ . ": [".$this->code."]: ".$this->message."\n".
 				$this->getTraceAsString();

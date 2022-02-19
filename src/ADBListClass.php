@@ -6,11 +6,7 @@
  * 
  * @package REDBObjects
  */
-
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/ADBClass.php';
+namespace REDBObjects;
 
 /**
  * Lista osztályok tulajdonságai.

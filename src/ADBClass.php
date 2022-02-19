@@ -6,6 +6,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects;
 
 /**
  * ADBClass absztrakt ős

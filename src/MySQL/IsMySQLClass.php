@@ -6,16 +6,15 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects\MySQL;
 
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/../ADBClass.php';
-
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/../IIsDBClass.php';
+use REDBObjects\ADBClass;
+use REDBObjects\IIsDBClass;
+use REDBObjects\REDBObjects;
+use REDBObjects\Exceptions\IncompatibleTable;
+use REDBObjects\Exceptions\AmbiguousException;
+use REDBObjects\Exceptions\NotIssetPropertyException;
+use REDBObjects\Exceptions\IteratorEndException;
 
 /**
  * Adatbázis táblákat megvalósító osztály
@@ -63,7 +62,7 @@ require_once dirname(__FILE__) . '/../IIsDBClass.php';
  * 
  * @package REDBObjects
  */
-class IsMySQLClass extends ADBClass implements IIsDBClass, Iterator, ArrayAccess
+class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAccess
 {
 
 	/**

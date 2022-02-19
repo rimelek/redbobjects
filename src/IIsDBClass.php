@@ -6,6 +6,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects;
 
 /**
  * IIsDBClass interfész
@@ -17,7 +18,7 @@
  * 
  * @package REDBObjects
  */
-interface IIsDBClass extends Countable
+interface IIsDBClass extends \Countable
 {
 	/**
 	 * Rekord(ok) frissítése/módosítása

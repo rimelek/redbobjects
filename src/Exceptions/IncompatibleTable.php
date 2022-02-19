@@ -6,6 +6,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects\Exceptions;
 
 /**
  * IncompatibleTable
@@ -17,7 +18,7 @@
  * 
  * @package REDBObjects
  */
-class IncompatibleTable extends Exception {
+class IncompatibleTable extends \Exception {
 	function __toString() {
 		return __CLASS__ . ": [".$this->code."]: ".$this->message."\n".
 				$this->getTraceAsString();

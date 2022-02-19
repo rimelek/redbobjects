@@ -7,26 +7,14 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects\Exceptions;
 
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/../ADBListClass.php';
-
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/../IIsDBListClass.php';
-
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/../IIsDBClass.php';
-
-/**
- * @ignore
- */
-require_once dirname(__FILE__) . '/IsMySQLClass.php';
+use REDBObjects\ADBListClass;
+use REDBObjects\IIsDBClass;
+use REDBObjects\IIsDBListClass;
+use ReflectionClass;
+use REDBObjects\REDBObjects;
+use REDBObjects\MySQL\IsMySQLClass;
 
 /**
  * Lista osztály
@@ -49,13 +37,13 @@ require_once dirname(__FILE__) . '/IsMySQLClass.php';
  * mysql_connect('localhost', 'root', 'password');
  * mysql_select_db('teszt');
  *
- * $list->tableName_signal = 'T_'; //Ez az alapértelmezett is
+ * $list->tableName_signal = 'T__'; //Ez az alapértelmezett is
  * $list->table_field_sep = '__'; //az alapértelmezett az egy darab _ jel
  *
  * $list->page('teszt', 10);
  * foreach ($list as $key => $object)
  * {
- *	print $object->T_teszt__id.', '.$object->field.'<br />'.PHP_EOL;
+ *	print $object->T__teszt__id.', '.$object->field.'<br />'.PHP_EOL;
  *	if ($object->id == 2)
  *	{
  *		$object->field = 'P';
@@ -71,7 +59,7 @@ require_once dirname(__FILE__) . '/IsMySQLClass.php';
  * 
  * @package REDBObjects
  */
-class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator, ArrayAccess
+class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator, \ArrayAccess
 {
 	/**
 	 * Lista elemeit tároló tömb

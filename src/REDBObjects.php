@@ -6,6 +6,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects;
 
 /**
  * Project kezelő osztály
@@ -16,34 +17,6 @@
  */
 class REDBObjects
 {
-	/**
-	 * Adott adatbázis típushoz megfelelő osztályok importálása
-	 *
-	 * @param string $type Adatbázis típus
-	 * @return bool True, ha sikerült az import. False, ha nem
-	 */
-	public static function uses($type='mysql')
-	{
-		$dir = dirname(__FILE__).'/'.$type;
-
-		if (!is_dir($dir))
-		{
-			return false;
-		}
-
-		$files = scandir($dir);
-		foreach ($files as $file)
-		{
-			if (is_dir($dir.'/'.$file))
-			{
-				continue;
-			}
-
-			require_once $dir.'/'.$file;
-		}
-		return true;
-	}
-
 	/**
 	 *
 	 * @param array $array

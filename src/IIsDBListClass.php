@@ -6,6 +6,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects;
 
 /**
  * IIsDBListClass interfész
@@ -17,7 +18,7 @@
  * 
  * @package REDBObjects
  */
-interface IIsDBListClass extends Countable
+interface IIsDBListClass extends \Countable
 {
 	/**
 	 * A listához új elem hozzáadása

@@ -7,6 +7,7 @@
  * 
  * @package REDBObjects
  */
+namespace REDBObjects\Exceptions;
 
 /**
  * IteratorEndException
@@ -17,7 +18,7 @@
  * 
  * @package REDBObjects
  */
-class IteratorEndException extends Exception {
+class IteratorEndException extends \Exception {
 	function __toString() {
 		return __CLASS__ . ": [".$this->code."]: ".$this->message."\n".
 				$this->getTraceAsString();
