@@ -267,9 +267,11 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, Iterator,
 			}
 
 			//virtuális mezők felvétele mező listába
-			foreach ($this->virtualFields[$tableName] as $fn => $fv) {
-				$afields[] = " ($fv) as `.$tableName.$fn` ";
-			}
+            if (isset($this->virtualFields[$tableName])) {
+                foreach ($this->virtualFields[$tableName] as $fn => $fv) {
+                    $afields[] = " ($fv) as `.$tableName.$fn` ";
+                }
+            }
 		}
 
 		if ($this->page === null)
