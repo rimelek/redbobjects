@@ -10,7 +10,7 @@ R.E. DBObjects was started in 2012 as a project which helped me to learn about
 I used it mainly in R.E. Login, which became popular mainly among other beginners, and people still find me from time
 to time to ask me if I would ever continue the project.
 
-I don't encourage anyone to use R.E. Login or R.E DBObjects today, but now, in 2022, 11 years after abandoning these
+I don't encourage anyone to use R.E. Login or R.E DBObjects today, but now, in 2022, 10 years after abandoning these
 project, I decided to add some fixes to make it work in a container with older PHP versions as a demonstration
 how Docker can help us, and then make it work with recent PHPs as well.
 
