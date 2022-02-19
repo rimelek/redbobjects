@@ -1,0 +1,4 @@
+services:
+  php:
+    image: redbobjects:composer
+    network_mode: host

@@ -1,0 +1,24 @@
+volumes:
+  dbdata:
+
+services:
+  db:
+    image: mysql:5.6
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: app
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: app
+    platform: linux/amd64
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./test/test.sql:/docker-entrypoint-initdb.d/test.sql
+  php:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    volumes:
+      - .:/var/www/html

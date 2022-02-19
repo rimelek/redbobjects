@@ -1,0 +1,14 @@
+{
+    "name": "rimelek/redbobjects",
+    "description": "ORM-like, but not a real ORM project. Not recommended for production.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ákos Takács",
+            "email": "rimelek@it-sziget.hu"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
