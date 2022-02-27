@@ -13,6 +13,8 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
       - ./test/test.sql:/docker-entrypoint-initdb.d/test.sql
+    ports:
+      - ${DB_PORT_EXTERNAL:-3307}:3306
   php:
     depends_on:
       - db
