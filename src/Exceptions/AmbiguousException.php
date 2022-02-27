@@ -4,9 +4,9 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects\Exceptions;
+namespace Rimelek\REDBObjects\Exceptions;
 
 /**
  * AmbiguousException
@@ -19,7 +19,7 @@ namespace REDBObjects\Exceptions;
  * </code>
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 class AmbiguousException extends \Exception {
 	function __toString() {

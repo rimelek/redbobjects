@@ -4,9 +4,9 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects;
+namespace Rimelek\REDBObjects;
 
 /**
  * IIsDBListClass interfész
@@ -16,7 +16,7 @@ namespace REDBObjects;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 interface IIsDBListClass extends \Countable
 {

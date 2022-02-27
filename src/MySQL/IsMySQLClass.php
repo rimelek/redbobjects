@@ -4,17 +4,17 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects\MySQL;
+namespace Rimelek\REDBObjects\MySQL;
 
-use REDBObjects\ADBClass;
-use REDBObjects\IIsDBClass;
-use REDBObjects\REDBObjects;
-use REDBObjects\Exceptions\IncompatibleTable;
-use REDBObjects\Exceptions\AmbiguousException;
-use REDBObjects\Exceptions\NotIssetPropertyException;
-use REDBObjects\Exceptions\IteratorEndException;
+use Rimelek\REDBObjects\ADBClass;
+use Rimelek\REDBObjects\IIsDBClass;
+use Rimelek\REDBObjects\REDBObjects;
+use Rimelek\REDBObjects\Exceptions\IncompatibleTable;
+use Rimelek\REDBObjects\Exceptions\AmbiguousException;
+use Rimelek\REDBObjects\Exceptions\NotIssetPropertyException;
+use Rimelek\REDBObjects\Exceptions\IteratorEndException;
 
 /**
  * Adatbázis táblákat megvalósító osztály
@@ -30,12 +30,12 @@ use REDBObjects\Exceptions\IteratorEndException;
  *
  * <b>Az osztály helyes használata:</b><br />
  * <code>
- * use REDBObjects\DatabaseConnection;
+ * use Rimelek\REDBObjects\DatabaseConnection;
  * 
  * require_once 'vendor/autoload.php';
  *
  * $db = DatabaseConnection::create('mysql:host=db;port=3306;dbname=app;charset=utf8', 'app', 'password');
- * REDBObjects::setConnection($db->getRawConnection());
+ * Rimelek\REDBObjects::setConnection($db->getRawConnection());
  * 
  * class MyClass extends IsMySQLClass {}
  * $user = new MyClass([
@@ -70,7 +70,7 @@ use REDBObjects\Exceptions\IteratorEndException;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAccess
 {

@@ -5,9 +5,9 @@
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects\Exceptions;
+namespace Rimelek\REDBObjects\Exceptions;
 
 /**
  * IteratorEndException
@@ -16,7 +16,7 @@ namespace REDBObjects\Exceptions;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 class IteratorEndException extends \Exception {
 	function __toString() {

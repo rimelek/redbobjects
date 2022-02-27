@@ -4,9 +4,9 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects\Exceptions;
+namespace Rimelek\REDBObjects\Exceptions;
 
 /**
  * NotIssetPropertyException
@@ -15,7 +15,7 @@ namespace REDBObjects\Exceptions;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 class NotIssetPropertyException extends \Exception {
 	function __toString() {

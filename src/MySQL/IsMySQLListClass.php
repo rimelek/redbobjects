@@ -5,18 +5,18 @@
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * @copyright Copyright (C) 2010, Takács Ákos
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects\MySQL;
+namespace Rimelek\REDBObjects\MySQL;
 
-use REDBObjects\ADBListClass;
-use REDBObjects\IIsDBClass;
-use REDBObjects\IIsDBListClass;
-use REDBObjects\REDBObjects;
+use Rimelek\REDBObjects\ADBListClass;
+use Rimelek\REDBObjects\IIsDBClass;
+use Rimelek\REDBObjects\IIsDBListClass;
+use Rimelek\REDBObjects\REDBObjects;
 use ReflectionClass;
 use PDO;
-use REDBObjects\Exceptions\IncompatibleTable;
-use REDBObjects\ADBClass;
+use Rimelek\REDBObjects\Exceptions\IncompatibleTable;
+use Rimelek\REDBObjects\ADBClass;
 
 /**
  * Lista osztály
@@ -33,12 +33,12 @@ use REDBObjects\ADBClass;
  * </ul>
  *
  * <code>
- * use REDBObjects\DatabaseConnection;
+ * use Rimelek\REDBObjects\DatabaseConnection;
  *
  * require_once 'vendor/autoload.php';
  *
  * $db = DatabaseConnection::create('mysql:host=db;port=3306;dbname=app;charset=utf8', 'app', 'password');
- * REDBObjects::setConnection($db->getRawConnection());
+ * Rimelek\REDBObjects::setConnection($db->getRawConnection());
  *
  * $users->page('users', 10);
  * foreach ($users as $key => $user)
@@ -54,7 +54,7 @@ use REDBObjects\ADBClass;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator, \ArrayAccess
 {
@@ -158,7 +158,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 * @param array $tablelist
 	 * @param string $className
 	 */
-	function __construct($tablelist,$className = 'REDBObjects\\MySQL\\IsMySQLClass')
+	function __construct($tablelist,$className = 'Rimelek\\REDBObjects\\MySQL\\IsMySQLClass')
 	{
 		$this->tablelist = $this->defaultTablelist = $tablelist;
 		$this->className = $className;
@@ -292,7 +292,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 		$record=null;
 
 		//Az ADBClass absztrakt osztály tulajdonságainak lekérdezése
-		$ref = new ReflectionClass('REDBObjects\\ADBClass');
+		$ref = new ReflectionClass('Rimelek\REDBObjects\\ADBClass');
 		$props = $ref->getDefaultProperties();
 
 		while($fetch = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -338,12 +338,12 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 * Csak egy értékekkel feltöltött, példányosított {@link IsMySQLClass} típusú objektumra van szükség.
 	 *
 	 * <code>
-     * use REDBObjects\DatabaseConnection;
+     * use Rimelek\REDBObjects\DatabaseConnection;
      *
      * require_once 'vendor/autoload.php';
      *
      * $db = DatabaseConnection::create('mysql:host=db;port=3306;dbname=app;charset=utf8', 'app', 'password');
-     * REDBObjects::setConnection($db->getRawConnection());
+     * Rimelek\REDBObjects::setConnection($db->getRawConnection());
 	 *
 	 * class MyClass extends IsMySQLClass {}
 	 * class MyList extends IsMySQLListClass {}

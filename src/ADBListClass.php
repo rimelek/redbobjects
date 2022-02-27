@@ -4,9 +4,9 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects;
+namespace Rimelek\REDBObjects;
 
 /**
  * Lista osztályok tulajdonságai.
@@ -15,7 +15,7 @@ namespace REDBObjects;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 abstract class ADBListClass extends ADBClass
 {

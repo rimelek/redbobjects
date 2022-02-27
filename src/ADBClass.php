@@ -4,9 +4,9 @@
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
-namespace REDBObjects;
+namespace Rimelek\REDBObjects;
 
 /**
  * ADBClass absztrakt ős
@@ -17,7 +17,7 @@ namespace REDBObjects;
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
- * @package REDBObjects
+ * @package Rimelek\REDBObjects
  */
 abstract class ADBClass
 {

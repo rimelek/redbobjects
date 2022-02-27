@@ -1,6 +1,6 @@
 <?php
 
-namespace REDBObjects\MySQL;
+namespace Rimelek\REDBObjects\MySQL;
 
 use PDO;
 
