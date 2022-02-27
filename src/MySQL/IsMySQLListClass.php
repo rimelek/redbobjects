@@ -7,14 +7,16 @@
  * 
  * @package REDBObjects
  */
-namespace REDBObjects\Exceptions;
+namespace REDBObjects\MySQL;
 
 use REDBObjects\ADBListClass;
 use REDBObjects\IIsDBClass;
 use REDBObjects\IIsDBListClass;
-use ReflectionClass;
 use REDBObjects\REDBObjects;
-use REDBObjects\MySQL\IsMySQLClass;
+use ReflectionClass;
+use PDO;
+use REDBObjects\Exceptions\IncompatibleTable;
+use REDBObjects\ADBClass;
 
 /**
  * Lista osztály
@@ -31,29 +33,24 @@ use REDBObjects\MySQL\IsMySQLClass;
  * </ul>
  *
  * <code>
- * require_once 'REDBObjects/REDBObjects.php';
- * REDBObjects::uses('mysql');
+ * use REDBObjects\DatabaseConnection;
  *
- * mysql_connect('localhost', 'root', 'password');
- * mysql_select_db('teszt');
+ * require_once 'vendor/autoload.php';
  *
- * $list->tableName_signal = 'T__'; //Ez az alapértelmezett is
- * $list->table_field_sep = '__'; //az alapértelmezett az egy darab _ jel
+ * $db = DatabaseConnection::create('mysql:host=db;port=3306;dbname=app;charset=utf8', 'app', 'password');
+ * REDBObjects::setConnection($db->getRawConnection());
  *
- * $list->page('teszt', 10);
- * foreach ($list as $key => $object)
+ * $users->page('users', 10);
+ * foreach ($users as $key => $user)
  * {
- *	print $object->T__teszt__id.', '.$object->field.'<br />'.PHP_EOL;
- *	if ($object->id == 2)
- *	{
- *		$object->field = 'P';
- *		$object->update();
- *	}
+ *	  echo $user->T__users__id . ', ' . $user->name . '<br />' . PHP_EOL;
  * }
  * </code>
  *
- * @property string $tableName_signal Táblanevet jelző prefix
- * @property string $table_field_sep Táblanevet és mezőnevet elválasztó jel
+ * @property string $tableName_signal
+ *                  A prefix in the field names which can be followed by a table name in case of multi-table objects.
+ * @property string $table_field_sep
+ *                  Separator between the table name and the field name in case of multi-table objects.
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
@@ -147,7 +144,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	/**
 	 * @return ReflectionClass
 	 */
-	private function reflectionClass()
+	private function reflectionClass(): ReflectionClass
 	{
 		if (is_null($this->reflectionClass)) {
 			$this->reflectionClass = new ReflectionClass($this->className);
@@ -161,7 +158,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 * @param array $tablelist
 	 * @param string $className
 	 */
-	function __construct($tablelist,$className='IsMySQLClass')
+	function __construct($tablelist,$className = 'REDBObjects\\MySQL\\IsMySQLClass')
 	{
 		$this->tablelist = $this->defaultTablelist = $tablelist;
 		$this->className = $className;
@@ -188,10 +185,11 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	protected function setPagesAndCount($sql, $limit)
 	{
 		if (!$sql) return;
+        $pdo = REDBObjects::getConnection(get_class($this));
 		$this->sql = $sql;
 		$this->limit = $limit;
 		//Lekérdezésre illeszkedő sorok száma limit nélkül
-		$count = mysql_fetch_row( mysql_query( "select count(*) from $sql" ) );
+		$count = $pdo->query("select count(*) from $sql")->fetch(PDO::FETCH_COLUMN);
 		$this->count=$count[0];
 		//Ha megadtuk a limitet
 		if ($limit) {
@@ -237,6 +235,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 */
 	public function init($psql,&$offset=0,$limit=0)
 	{
+        $pdo = REDBObjects::getConnection(get_class($this));
 		$afields = array();
 		$this->records = array();
 		//végig kell menni a táblalistánés összeállítani a lekérdezendő mezőlistát
@@ -289,14 +288,14 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 			$sql .= " limit $offset, $limit";
 		}
 
-		$query = mysql_query($sql);
+		$stmt = $pdo->query($sql);
 		$record=null;
 
 		//Az ADBClass absztrakt osztály tulajdonságainak lekérdezése
-		$ref = new ReflectionClass('ADBClass');
+		$ref = new ReflectionClass('REDBObjects\\ADBClass');
 		$props = $ref->getDefaultProperties();
 
-		while($fetch = mysql_fetch_assoc($query)) {
+		while($fetch = $stmt->fetch(PDO::FETCH_ASSOC)) {
 			//objektumok létrehozása
 			//Egy példány létrehozása a listában tárolandó objektumtípusból
 			$record = $this->createRecord(true);
@@ -339,19 +338,21 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 * Csak egy értékekkel feltöltött, példányosított {@link IsMySQLClass} típusú objektumra van szükség.
 	 *
 	 * <code>
-	 * require_once 'REDBObjects/REDBObjects.php';
-	 * REDBObjects::uses('mysql');
-	 *
-	 * mysql_connect('localhost', 'root', 'password');
-	 * mysql_select_db('teszt');
+     * use REDBObjects\DatabaseConnection;
+     *
+     * require_once 'vendor/autoload.php';
+     *
+     * $db = DatabaseConnection::create('mysql:host=db;port=3306;dbname=app;charset=utf8', 'app', 'password');
+     * REDBObjects::setConnection($db->getRawConnection());
 	 *
 	 * class MyClass extends IsMySQLClass {}
 	 * class MyList extends IsMySQLListClass {}
-	 * $tablelist = array(
-	 *	'table1'=>array('field1','field2'),
-	 *	'table2'=>array('field3','field4'));
+	 * $tablelist = [
+	 *	'table1' => ['field1', 'field2'],
+	 *	'table2' => ['field3', 'field4'],
+     * ];
 	 * $object = new MyClass($tablelist);
-	 * $list = new MyList($tablelist,'MyClass');
+	 * $list = new MyList($tablelist, 'MyClass');
 	 * $object->field1 = 'value1';
 	 * $object->field3 = 'value3';
 	 * $list->add($object);
@@ -364,6 +365,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 */
 	function add(IIsDBClass $object, $append=false)
 	{
+        $pdo = REDBObjects::getConnection(get_class($this));
 		$object->update(false);
 		//ciklusban végigmegy a táblákon
 		$props = $object->properties;
@@ -389,12 +391,12 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 			$fieldNames = implode(', ',$fieldNames);
 			//felviszi a táblába az új sort a megadott mezőkkel
 			$t = isset($this->tableAliases[$tableName]) ? $this->tableAliases[$tableName] : $tableName;
-			mysql_query("insert into `$t` ($fieldNames) values($fieldValues)");
+			$pdo->query("insert into `$t` ($fieldNames) values($fieldValues)");
 			if ($first)
 			{
 				$first = false;
 				//szükség lehet az elsődleges kulcsra, ha a kapcsoló mező auto_increment
-				$last_id = mysql_insert_id();
+				$last_id = $pdo->lastInsertId();
 			}
 		}
 		$this->count++;
@@ -436,6 +438,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 	 */
 	protected function getFields()
 	{
+        $pdo = REDBObjects::getConnection(get_class($this));
 		//a táblákat végigjárva az összes mezőjének nevét lekérdezi, így az indexek mindig léteznek,
 		//és az update() metódus akor is kiszűri a nem létező neveket, ha nem volt inicializálva az objektum
 		$fields = array();
@@ -460,11 +463,10 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 				}
 			}
 
-			$query = mysql_query("show columns from `".$from."`");
+			$statement = $query = $pdo->query("show columns from `".$from."`");
 			$in = false;
-			while ($field = mysql_fetch_assoc($query))
+			while ($field = $statement->fetch(PDO::FETCH_ASSOC))
 			{
-
 				$this->properties[$tableName][$field['Field']] = '';
 				//ha az összes mezőt * karakterrel jelöltük
 				if (($_in = $in) !== false or $in = (array_search('*',$fieldList) !== false) )
@@ -490,8 +492,8 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 			//ezért kivételt kell dobni, ha egy tábla nem tartalmaz olyan mezőt.
 			if ( !isset($this->priKeys[$tableName]) )
 			{
-				require_once dirname(__FILE__) . '/../Exceptions/IncompatibleTable.php';
-				throw new IncompatibleTable("Egyedi elsődleges kulcs mező használata kötelező! Tábla: ".$tableName);
+                var_dump($this->priKeys);
+				throw new IncompatibleTable("Using a primary key is required! Table: " . $tableName);
 			}
 		}
 	}
@@ -537,6 +539,7 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 		$table = "";
 		$field = "";
 		$i=0;
+        $pdo = REDBObjects::getConnection(get_class($this)); 
 
 		if (!is_array($keyName)) {
 			$keyName = array($keyName => $keyValue);
@@ -573,10 +576,10 @@ class IsMySQLListClass extends ADBListClass implements IIsDBListClass, \Iterator
 			{
 				$wt_table = $this->tableAliases[$wt_table];
 			}
-			$sql = "delete from `$wt_table` where ".REDBObjects::createWhere($wt_fields);
+			$sql = "delete from `$wt_table` where " . SQLHelper::createAndWhere($pdo, $wt_fields);
 
-			mysql_query($sql);
-			$i+=mysql_affected_rows();
+			$stmt = $pdo->query($sql);
+			$i += $stmt->rowCount();
 		}
 		$this->setPagesAndCount($this->sql, $this->limit);
 		return $i;

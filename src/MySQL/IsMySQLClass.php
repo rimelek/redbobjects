@@ -30,33 +30,43 @@ use REDBObjects\Exceptions\IteratorEndException;
  *
  * <b>Az osztály helyes használata:</b><br />
  * <code>
- * require_once 'REDBObjects/REDBObjects.php';
- * REDBObjects::uses('mysql');
+ * use REDBObjects\DatabaseConnection;
+ * 
+ * require_once 'vendor/autoload.php';
  *
- * mysql_connect('localhost', 'root', 'password');
- * mysql_select_db('teszt');
+ * $db = DatabaseConnection::create('mysql:host=db;port=3306;dbname=app;charset=utf8', 'app', 'password');
+ * REDBObjects::setConnection($db->getRawConnection());
  * 
  * class MyClass extends IsMySQLClass {}
- * $user = new MyClass(array(
- * 	'users'=>array('useremail','username'),
- * 	'profile'=>array('firstname','lastname','useremail')));
+ * $user = new MyClass([
+ * 	'users' => ['useremail', 'username'],
+ * 	'profile' => ['firstname', 'lastname', 'useremail'],
+ * ]);
  *
- * $user->init(array('id'=>12));  //Valamilyen kapcsoló mező értéke alapján
- * //Vagy sql lekérdezés alapján.
- * //Az sql lekérdezés FROM kulcsszó utáni része
- * //$user->init("users left join profile where users.useremail = 'valami@ize.hu'");
- * print "A nevem: ".$user->lastname." ".$user->firstname."<br />";
- * $user->lastname = 'Új vezetéknév';
- * $user->firstname 'Új keresztnév';
- * //Vagy akár így is:
- * //$user['lastname'] = 'Új vezetéknév';
- * $user->T__profile__useremail = 'Új publikus emailcím';
- * //Ez a metódus végzi el a frissítést. Enélkül nem kerül adatbázisba az új adat
+ * $user->init(['id' => 12]);  // where 'id' must be a common field for a multi-table object
+ * 
+ * // Or use a query without FROM and everything before that
+ * // $user->init("users left join profile where users.useremail = 'something@foo.tld'");
+ * print "My name is: ". $user->lastname . " " . $user->firstname . "<br />";
+ * $user->lastname = 'New lastname';
+ * $user->firstname 'New firstname';
+ * 
+ * // Alternatively you could use the array syntax:
+ * // $user['lastname'] = 'New lastname';
+ * 
+ * // Refer to a field in only one table when it exists in multiple tables.
+ * $user->T__profile__useremail = 'New email address';
+ * // And finally update the database records.
  * $user->update();
+ * 
+ * // You could use $user->update(false) to update the object but not the database.
+ * // In that case you can read the value back, but it will not be stored in the database.
  * </code>
  *
- * @property string $tableName_signal Táblanevet jelző prefix
- * @property string $table_field_sep Táblanevet és mezőnevet elválasztó jel
+ * @property string $tableName_signal
+ *                  A prefix in the field names which can be followed by a table name in case of multi-table objects.
+ * @property string $table_field_sep
+ *                  Separator between the table name and the field name in case of multi-table objects.
  *
  * @author Takács Ákos (Rimelek), programmer [at] rimelek [dot] hu
  * 
@@ -97,7 +107,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 	*/
 	public $new_properties = array();
 
-	/**
+    /**
 	*	IsMySQLClass osztály konstruktora
 	*
 	*	@param array $tablelist Két dimenziós tömb. Formátuma:
@@ -129,6 +139,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 	 */
 	public function init($rowid)
 	{
+        $pdo = REDBObjects::getConnection(get_class($this));
 		//ha sql lekérdezéssel inicializáljuk az objektumot
 		if (!is_array($rowid)) {
 			$afields = array();
@@ -138,7 +149,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 				//egy táblán belül az összes mező felvétele táblanevet tartalmazó aliassal
 				foreach ($fieldList as $field)
 				{
-					$afields[] = "`$tableName`.`$field` as `$tableName.$field`";
+					$afields[] = "`$tableName`.`$field` as '$tableName.$field'";
 				}
 				//ha az elsődleges kulcs mezőt nem kértük le, akkor automatikusan lekérdezéshez adódik
 				foreach($this->priKeys[$tableName] as $pkn => $pkv) {
@@ -158,7 +169,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 			$fields = implode(",\n",$afields);
 			$i=0;
 			$sql = "select $fields from $rowid";
-			if($fetch = mysql_fetch_assoc(mysql_query($sql))) {
+			if($fetch = $pdo->query($sql)->fetch(\PDO::FETCH_ASSOC)) {
 				$afields = array();
 				//itt az eredményt be kell tölteni a properties tulajdonságba
 				foreach($this->tablelist as $tableName=>$fieldList)
@@ -196,14 +207,14 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 			$fieldList = array_unique($fieldList);
 			$fields = implode(",\n", $fieldList);
 			$t = (isset($this->tableAliases[$tableName])) ? $this->tableAliases[$tableName] : $tableName;
-			$sql = "select $fields from `$t` where ".REDBObjects::createWhere($rowid)." limit 1";
-			if($fetch = mysql_fetch_assoc(mysql_query($sql)))
+			$sql = "select $fields from `$t` where " . SQLHelper::createAndWhere($pdo, $rowid) . " limit 1";
+			if($fetch = $pdo->query($sql)->fetch(\PDO::FETCH_ASSOC))
 			{
-				foreach ($fetch as $key => &$value) {
+				foreach ($fetch as $key => $value) {
 					if (substr($key, 0,1) == '.') {
-						list(,,$f) = explode('.',$key);
+						list(,, $f) = explode('.', $key);
 						$this->virtualFields[$tableName][$f] = $value;
-						unset($value);
+						// unset($value);
 					}
 				}
 				$this->properties[$tableName] = $fetch;
@@ -219,9 +230,14 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 	/**
 	 * A táblalista szerint az összes lehetséges mező nevének lekérdezése,
 	 * és beállítása tulajdonságnak
+     * 
+     * Get all the available fields from the table and set properties
+     * 
+     * @throws IncompatibleTable When the table does not have unique key field
 	 */
 	public function getFields()
-	{ 
+	{
+        $pdo = REDBObjects::getConnection(get_class($this));
 		//a táblákat végigjárva az összes mezőjének nevét lekérdezi, így az indexek mindig léteznek,
 		//és az update() metódus akor is kiszűri a nem létező neveket, ha nem volt inicializálva az objektum
 		$fields = array();
@@ -247,9 +263,9 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 				}
 			}
 
-			$query = mysql_query("show columns from `".$from."`");
+			$query = $pdo->query("show columns from `$from`");
 			$in = false;
-			while ($field = mysql_fetch_assoc($query))
+			foreach ($query->fetchAll(\PDO::FETCH_ASSOC) as $field)
 			{
 				//ha az összes mezőt * karakterrel jelöltük
 				if (($_in = $in) !== false or ($in = array_search('*',$fieldList)) !== false)
@@ -275,8 +291,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 			//ezért kivételt kell dobni, ha egy tábla nem tartalmaz olyan mezőt.
 			if ( !isset($this->priKeys[$tableName]) )
 			{
-				require_once dirname(__FILE__) . '/../Exceptions/IncompatibleTable.php';
-				throw new IncompatibleTable("Egyedi elsődleges kulcs mező használata kötelező! Tábla: ".$tableName);
+				throw new IncompatibleTable('Unique key field is required! Table: ' . $tableName);
 			}
 		}
 	}
@@ -410,10 +425,11 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 	 */
 	function update($refreshDB=true)
 	{
+        $pdo = REDBObjects::getConnection(get_class($this));
 		//Az összes táblán végig kell menni
 		foreach ($this->tablelist as $tableName => $fieldList)
 		{
-			$query=false;
+			$updatedRowCount = 0;
 			//ha az új értékek változó nem tömb, ki kell lépni, mert a ciklus tömböt vár
 			if (!isset($this->new_properties[$tableName]) or !is_array($this->new_properties[$tableName])) continue;
 			//most az új értékeken kell végigmenni
@@ -435,7 +451,7 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 					foreach ($this->new_properties[$tableName] as $fieldName=>$value )
 					{
 						if (!$this->isNonQuoted($tableName, $fieldName)) {
-							$value = "'".  mysql_real_escape_string($value)."'";
+							$value = $pdo->quote($value);
 						}
 						//Minden érték visszaállítása alapra
 						$this->resetNonQuoted($tableName, $fieldName);
@@ -444,11 +460,14 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 					$update = implode(', ',$update);
 					$t = (isset($this->tableAliases[$tableName])) ? $this->tableAliases[$tableName] : $tableName;
 					$sql = "update `$t` set $update where ".$this->_getPKCond($tableName);
-					$query = mysql_query($sql);
+					$stmt = $pdo->query($sql);
+                    if ($stmt) {
+                        $updatedRowCount = $stmt->rowCount();
+                    }
 				}
 			}
 			//ha frissíteni akartuk az adatbázist és a frissítés sikeres is lett, vagy nem akartuk frissíteni
-			if (!$refreshDB or $query)
+			if (!$refreshDB or $updatedRowCount > 0)
 			{
 				//akkor beállítható a lekérdezhető tulajdonságokhoz is az érték
 				foreach ($this->new_properties[$tableName] as $fieldName => $value)
@@ -470,8 +489,8 @@ class IsMySQLClass extends ADBClass implements IIsDBClass, \Iterator, \ArrayAcce
 	 */
 	private function _getPKCond($tableName)
 	{
-		$pk_where = array();
-		return REDBObjects::createWhere($this->priKeys[$tableName]);
+        $pdo = REDBObjects::getConnection(get_class($this));
+		return SQLHelper::createAndWhere($pdo, $this->priKeys[$tableName]);
 	}
 
 	/**

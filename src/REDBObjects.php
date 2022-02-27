@@ -8,6 +8,8 @@
  */
 namespace REDBObjects;
 
+use PDO;
+
 /**
  * Project kezelő osztály
  *
@@ -17,19 +19,42 @@ namespace REDBObjects;
  */
 class REDBObjects
 {
-	/**
-	 *
-	 * @param array $array
-	 * @param bool $or
-	 */
-	public static function createWhere($array, $or=false)
-	{
-		$sep = $or ? ' or ' : ' and ';
-		$where = array();
-		foreach ($array as $k => $v) {
-			$k = '`'.str_replace('.', '`.`', $k).'`';
-			$where[] = " ".$k." = '".mysql_real_escape_string($v)."' ";
-		}
-		return implode($sep, $where);
-	}
+    /**
+     * @var PDO[]
+     */
+    private static array $connections = [];
+
+    /**
+     * @param PDO $connection
+     * @param $class
+     * @return void
+     */
+    public static function setConnection(PDO $connection, $class = null)
+    {
+        $key = $class === null ? 'default' : $class;
+        self::$connections[$key] = $connection;
+    }
+
+    /**
+     * @param string|null $class
+     * @return PDO
+     */
+    public static function getConnection(string $class = null): PDO
+    {
+        $key = ($class === null or !array_key_exists($class, self::$connections)) ? 'default' : $class;
+        return self::$connections[$key];
+    }
+
+    /**
+     * @param $dsn
+     * @param $user
+     * @param $password
+     * @return PDO
+     */
+    public static function createDatabaseConnection($dsn, $user, $password): PDO
+    {
+        return new PDO($dsn, $user, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+    }
 }
